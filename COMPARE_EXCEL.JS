@@ -1,4 +1,3 @@
-
 const fs = require('fs');
 const XLSX = require('xlsx');
 
@@ -19,9 +18,20 @@ function compareNameAndStatus(file1, file2, nameCol = 'Name', statusCol = 'Statu
     const data1 = sheet1.map(row => ({ [nameCol]: row[nameCol], [statusCol]: row[statusCol] }));
     const data2 = sheet2.map(row => ({ [nameCol]: row[nameCol], [statusCol]: row[statusCol] }));
 
-    // Perform inner join on Name column
-    const mergedData = data1.reduce((acc, obj1) => {
-        const obj2 = data2.find(obj => obj[nameCol] === obj1[nameCol]);
+    // Create a set of names from both files
+    const names1 = new Set(data1.map(row => row[nameCol]));
+    const names2 = new Set(data2.map(row => row[nameCol]));
+
+    // Find the intersection of the sets
+    const commonNames = new Set([...names1].filter(name => names2.has(name)));
+
+    // Filter data arrays to only include rows with common names
+    const filteredData1 = data1.filter(row => commonNames.has(row[nameCol]));
+    const filteredData2 = data2.filter(row => commonNames.has(row[nameCol]));
+
+    // Perform inner join on Name column with filtered data
+    const mergedData = filteredData1.reduce((acc, obj1) => {
+        const obj2 = filteredData2.find(obj => obj[nameCol] === obj1[nameCol]);
         if (obj2) {
             acc.push({
                 [`${nameCol}_file1`]: obj1[nameCol],
@@ -43,10 +53,11 @@ function compareNameAndStatus(file1, file2, nameCol = 'Name', statusCol = 'Statu
 
     console.log(`Comparison of '${statusCol}' for the same '${nameCol}' has been written to '${outputFileName}'.`);
 }
+
 // Specify input and output files
-const file1 = '/Users/sonali.kashyap/Downloads/suites (11).xlsx';
-const file2 = '/Users/sonali.kashyap/Downloads/suites (12).xlsx';
-const outputFileName = 'SMOKE report.xlsx';
+const file1 = '/Users/sonali.kashyap/Downloads/AWS harness (1).xlsx';
+const file2 = '/Users/sonali.kashyap/Downloads/GCP SMOKE AV2.xlsx';
+const outputFileName = 'DIFF REPORT.xlsx';
 
 // Specify name and status columns
 const nameCol = 'Name';
